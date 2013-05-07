@@ -1,6 +1,7 @@
 
-infile  installer.sh.in
-outfile embeder-installer.sh
+output          embeder-installer.sh
+preinstall      installer.sh.in
+defaultprefix   /usr/local
 
-file embeder.sh  bin embeder
+file embeder.sh  bin bin/embeder
 

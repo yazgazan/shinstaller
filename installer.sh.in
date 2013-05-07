@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 
-PREFIX="/usr/local"
-
 while [[ ! $# = 0 ]]; do
   if [[ $1 =~ '--prefix=' ]]; then
-    PREFIX=$(echo $1 | sed 's/--prefix=//g')
+    _EMBED_PREFIX=$(echo $1 | sed 's/--prefix=//g')
   fi
   shift
 done
-
-_embed_bin_extract $PREFIX"/bin/"$_EMBED_FILE_bin_PATH
-chmod +x $PREFIX"/bin/"$_EMBED_FILE_bin_PATH
 
