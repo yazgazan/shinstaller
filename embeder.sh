@@ -48,27 +48,12 @@ function init_tmp_file()  {
   touch $FILE
 }
 
-function cmd_skip()  {
-  return
-}
-
-function cmd_infile()  {
-  if [[ ! -r "$1" ]]; then
-    fail_open_read "$1"
-  fi
-  INFILE="$1"
-}
-
-function cmd_outfile()  {
+function cmd_output()  {
   touch "$1" >& /dev/null
   if [[ ! -w "$1" ]]; then
     fail_open_write "$1"
   fi
   OUTFILE="$1"
-}
-
-function cmd_autoextract()  {
-  AUTOEXTRACT="true"
 }
 
 function cmd_file()  {
@@ -86,6 +71,7 @@ function cmd_file()  {
     PATHTO="$_PATH"
   fi
 
+
   SIZE=$(stat -c%s "$_PATH")
   RIGHT=$(stat -c%a "$_PATH")
 
@@ -100,9 +86,15 @@ function cmd_file()  {
   echo '  if [[ $__PATHTO = "" ]]; then'
   echo '    __PATHTO="'$PATHTO'"'
   echo '  fi'
+  echo '  if [[ ! $(echo "$__PATHTO" | grep "/") = "" ]]; then'
+  echo '    __PATHTODIR=$(echo "$__PATHTO" | sed -E "s/\/[^/]+$/\//")'
+  echo '  else'
+  echo '    __PATHTODIR="."'
+  echo '  fi'
   echo '  let START=$_EMBED_TOTAL_SIZE-'$TOTAL_SIZE
-  echo '  cat "$0" | tail -c $START | head -c '$SIZE' > $__PATHTO'
-  echo '  chmod $_EMBED_FILE_'$NAME'_RIGHT $__PATHTO'
+  echo '  mkdir -p "$_EMBED_PREFIX"/"$__PATHTODIR"'
+  echo '  cat "$0" | tail -c $START | head -c '$SIZE' > "$_EMBED_PREFIX"/"$__PATHTO"'
+  echo '  chmod $_EMBED_FILE_'$NAME'_RIGHT "$_EMBED_PREFIX"/"$__PATHTO"'
   echo '}'
 
   EXTRACT_ALL=$EXTRACT_ALL'_embed_'$NAME'_extract; '
@@ -146,14 +138,115 @@ function cmd_textfile()  {
   echo '  if [[ $__PATHTO = "" ]]; then'
   echo '    __PATHTO="'$PATHTO'"'
   echo '  fi'
-  echo '  echo -e "'$FILECONTENT'" > $__PATHTO'
-  echo '  chmod $_EMBED_FILE_'$NAME'_RIGHT $__PATHTO'
+  echo '  if [[ ! $(echo "$__PATHTO" | grep "/") = "" ]]; then'
+  echo '    __PATHTODIR=$(echo "$__PATHTO" | sed -E "s/\/[^/]+$/\//")'
+  echo '  else'
+  echo '    __PATHTODIR="."'
+  echo '  fi'
+  echo '  echo -e "'$FILECONTENT'" > "$_EMBED_PREFIX"/"$__PATHTO"'
+  echo '  mkdir -p "$_EMBED_PREFIX"/"$__PATHTODIR"'
+  echo '  chmod $_EMBED_FILE_'$NAME'_RIGHT "$_EMBED_PREFIX"/"$__PATHTO"'
   echo '}'
   echo 'function _embed_'$NAME'_cat()  {'
   echo '  echo -e "'$FILECONTENT'"'
   echo '}'
 
   EXTRACT_ALL=$EXTRACT_ALL'_embed_'$NAME'_extract; '
+  return
+}
+
+function cmd_noinstall()  {
+  AUTOEXTRACT="false"
+}
+
+function cmd_pre_init()  {
+  SCRIPTNAME="$1"
+
+  if [[ $SCRIPTNAME = "" ]]; then
+    error "script name required (line $NLINE)"
+  fi
+  if [[ ! -r $SCRIPTNAME ]]; then
+    fail_open_read "$SCRIPTNAME"
+  fi
+  PREINIT="$SCRIPTNAME"
+}
+
+function cmd_pre_install()  {
+  SCRIPTNAME="$1"
+
+  if [[ $SCRIPTNAME = "" ]]; then
+    error "script name required (line $NLINE)"
+  fi
+  if [[ ! -r $SCRIPTNAME ]]; then
+    fail_open_read "$SCRIPTNAME"
+  fi
+  PREINSTALL="$SCRIPTNAME"
+}
+
+function cmd_post_install()  {
+  SCRIPTNAME="$1"
+
+  if [[ $SCRIPTNAME = "" ]]; then
+    error "script name required (line $NLINE)"
+  fi
+  if [[ ! -r $SCRIPTNAME ]]; then
+    fail_open_read "$SCRIPTNAME"
+  fi
+  POSTINSTALL="$SCRIPTNAME"
+}
+
+function cmd_default_prefix()  {
+  PREFIX="$1"
+
+  if [[ $PREFIX = "" ]]; then
+    error "prefix required (line $NLINE)"
+  fi
+  DEFAULTPREFIX="$PREFIX"
+}
+
+function cmd_exec()  {
+  SCRIPTNAME="$1"
+
+  if [[ $SCRIPTNAME = "" ]]; then
+    error "script name required (line $NLINE)"
+  fi
+  if [[ ! -x $SCRIPTNAME ]]; then
+    fail_open_execute "$SCRIPTNAME"
+  fi
+  ./$SCRIPTNAME
+}
+
+function cmd_source()  {
+  SCRIPTNAME="$1"
+
+  if [[ $SCRIPTNAME = "" ]]; then
+    error "script name required (line $NLINE)"
+  fi
+  if [[ ! -r $SCRIPTNAME ]]; then
+    fail_open_read "$SCRIPTNAME"
+  fi
+
+  . $SCRIPTNAME
+  echo $BLABLA
+}
+
+function cmd_eval()  {
+  SCRIPTSTR="$1"
+
+  SCRIPTSTR=$(echo $SCRIPTSTR | cut -d' ' -f2-)
+  if [[ $SCRIPTSTR = "" ]]; then
+    error "script required (line $NLINE)"
+  fi
+  eval "$SCRIPTSTR"
+}
+
+function cmd_debug()  {
+  while read -p "> " -u 1 DEBUG_CMD; do
+    eval $DEBUG_CMD
+  done
+}
+
+function cmd_skip()  {
   return
 }
 
@@ -179,32 +272,49 @@ fi
 
 TMPFILEEMBEDED="/tmp/embeded"
 TMPFILE="/tmp/embeder"
-INFILE=''
-OUTFILE=''
-AUTOEXTRACT=''
-EXTRACT_ALL=''
+PREINIT=""
+PREINSTALL=""
+POSTINSTALL=""
+DEFAULTPREFIX=""
+OUTFILE=""
+AUTOEXTRACT="true"
+EXTRACT_ALL=""
 
 init_tmp_file $TMPFILE
-echo 'env | grep -E "^_=" | grep "/usr/bin/env" > /dev/null || exit 0 `/usr/bin/env bash $0 $@`' >> $TMPFILE
 init_tmp_file $TMPFILEEMBEDED
 
 NLINE=0
-TOTAL_SIZE='0'
+TOTAL_SIZE=0
 NFILE=0
 while read LINE; do
   let NLINE+=1
+  WHOLELINE=$LINE
   LINE=( $LINE )
   CMD=${LINE[0]}
-  if [[ $CMD = "infile" ]]; then
-    cmd_infile "${LINE[1]}"
-  elif [[ $CMD = "outfile" ]]; then
-    cmd_outfile "${LINE[1]}"
+  if [[ $CMD = "output" ]]; then
+    cmd_output "${LINE[1]}"
   elif [[ $CMD = "file" ]]; then
     cmd_file "${LINE[1]}" "${LINE[2]}" "${LINE[3]}" >> $TMPFILE
   elif [[ $CMD = "textfile" ]]; then
     cmd_textfile "${LINE[1]}" "${LINE[2]}" "${LINE[3]}" >> $TMPFILE
-  elif [[ $CMD = "autoextract" ]]; then
-    cmd_autoextract
+  elif [[ $CMD = "noinstall" ]]; then
+    cmd_noinstall
+  elif [[ $CMD = "preinit" ]]; then
+    cmd_pre_init "${LINE[1]}"
+  elif [[ $CMD = "preinstall" ]]; then
+    cmd_pre_install "${LINE[1]}"
+  elif [[ $CMD = "postinstall" ]]; then
+    cmd_post_install "${LINE[1]}"
+  elif [[ $CMD = "defaultprefix" ]] || [[ $CMD = "prefix" ]]; then
+    cmd_default_prefix "${LINE[1]}" >> $TMPFILE
+  elif [[ $CMD = "exec" ]]; then
+    cmd_exec "${LINE[1]}"
+  elif [[ $CMD = "source" ]]; then
+    cmd_source "${LINE[1]}"
+  elif [[ $CMD = "eval" ]]; then
+    cmd_eval "$WHOLELINE"
+  elif [[ $CMD = "debug" ]]; then
+    cmd_debug
   elif [[ $CMD = "" ]]; then
     cmd_skip
   else
@@ -219,20 +329,29 @@ done < $CONFFILE
   echo "_EMBED_TOTAL_SIZE=$TOTAL_SIZE"
 ) >> $TMPFILE
 
-if [[ $AUTOEXTRACT = "true" ]]; then
-  echo "_embed_extract_all" >> "$TMPFILE"
-fi
-
 rm -f "$OUTFILE"
 touch "$OUTFILE"
 chmod +x "$OUTFILE"
 
-let NLINES=$(cat "$INFILE" | wc -l)-1
-
-cat "$INFILE" | head -n 1 > "$OUTFILE"
+echo '#!/usr/bin/env bash' >> "$OUTFILE"
+echo 'env | grep -E "^_=" | grep "/usr/bin/env" > /dev/null || exit 0 `/usr/bin/env bash $0 $@`' >> $OUTFILE
+if [[ ! $PREINIT = "" ]]; then
+  cat "$PREINIT" >> "$OUTFILE"
+fi
+echo '_EMBED_PREFIX="'$DEFAULTPREFIX'"' >> "$OUTFILE"
 cat "$TMPFILE" >> "$OUTFILE"
 
-tail -n $NLINES "$INFILE" >> "$OUTFILE"
+if [[ ! $PREINSTALL = "" ]]; then
+  cat "$PREINSTALL" >> "$OUTFILE"
+fi
+
+if [[ $AUTOEXTRACT = "true" ]]; then
+  echo "_embed_extract_all" >> "$OUTFILE"
+fi
+
+if [[ ! $POSTINSTALL = "" ]]; then
+  cat "$POSTINSTALL" >> "$OUTFILE"
+fi
 
 echo "exit" >> "$OUTFILE"
 
