@@ -14,12 +14,13 @@ function unknown_cmd()  {
 }
 
 function fail_open_read()  {
-  error "can't open file '$1' for reading"
+  error "can't open file '$1' for reading (line $NLINE)"
 }
 
 function fail_open_write()  {
-  error "can't open file '$1' for writing"
+  error "can't open file '$1' for writing (line $NLINE)"
 }
+
 function fail_open_execute()  {
   error "can't open file '$1' for execution (line $NLINE)"
 }
