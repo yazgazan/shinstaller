@@ -1,0 +1,6 @@
+
+infile  installer.sh.in
+outfile embeder-installer.sh
+
+file embeder.sh  bin embeder
+
