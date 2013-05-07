@@ -26,7 +26,7 @@ function fail_open_execute()  {
 }
 
 function usage()  {
-  echo "Usage : $0 <conf file>" > $STDERR
+  echo "Usage : $0 [conf file] (default 'embederconf')" > $STDERR
 }
 
 function help()  {
