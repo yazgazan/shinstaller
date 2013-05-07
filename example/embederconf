@@ -1,0 +1,11 @@
+infile test.sh
+outfile test.out.sh
+
+file  src/main.c      main
+file  src/toto.c      toto_c
+file  src/toto.h      toto_h
+file  src/Makefile    makefile
+file  src/a.out       bin       a.out
+
+textfile  utils/help  help      src/help
+
