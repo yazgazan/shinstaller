@@ -250,7 +250,7 @@ function cmd_skip()  {
   return
 }
 
-if [[ $# != 1 ]]; then
+if [[ $# < 1 ]]; then
   if [[ -r "embederconf" ]]; then
     CONFFILE="embederconf"
   else
@@ -259,6 +259,11 @@ if [[ $# != 1 ]]; then
   fi
 else
   CONFFILE=$1
+fi
+
+if [[ $# > 1 ]]; then
+  usage
+  exit 1
 fi
 
 if [[ $CONFFILE = "help" ]]; then
