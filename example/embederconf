@@ -1,11 +1,21 @@
-infile test.sh
-outfile test.out.sh
+prefix  ./
+output test.out.sh
+
+preinit preinit.sh
+preinstall preinstall.sh
+postinstall postinstall.sh
+
+exec  test.sh
 
 file  src/main.c      main
 file  src/toto.c      toto_c
 file  src/toto.h      toto_h
+source source.sh
+debug
 file  src/Makefile    makefile
 file  src/a.out       bin       a.out
+
+eval  echo "_eval_ : $NLINE"
 
 textfile  utils/help  help      src/help
 
