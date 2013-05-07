@@ -20,6 +20,9 @@ function fail_open_read()  {
 function fail_open_write()  {
   error "can't open file '$1' for writing"
 }
+function fail_open_execute()  {
+  error "can't open file '$1' for execution (line $NLINE)"
+}
 
 function usage()  {
   echo "Usage : $0 <conf file>" > $STDERR
