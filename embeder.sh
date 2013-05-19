@@ -294,6 +294,9 @@ NFILE=0
 while read LINE; do
   let NLINE+=1
   WHOLELINE=$LINE
+  if [[ "$(expr index "$WHOLELINE" "#")" = "1" ]]; then
+    continue
+  fi
   LINE=( $LINE )
   CMD=${LINE[0]}
   if [[ $CMD = "output" ]]; then
