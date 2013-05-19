@@ -26,18 +26,27 @@ function fail_open_execute()  {
 }
 
 function usage()  {
-  echo "Usage : $0 [conf file] (default 'embederconf')" > $STDERR
+  echo "Usage : $0 [conf file] (default "'`embederconf`'")" > $STDERR
 }
 
 function help()  {
   usage
   (
+    echo $'\t'"$0 help"
     echo
-    echo -e "conf file directives : "
-    echo -e "\tinfile   <script file>"
-    echo -e "\toutfile  <script file>"
-    echo -e "\tfile     <file path> <file name> [path to]"
-    echo -e "\ttextfile <file path> <file name> [path to]"
+    echo $'conf file directives : '
+    echo $'\toutput         <script file>                         - Set the installer file that will be generated'
+    echo $'\tfile           <file path>   <file name> [path to]   - Add a file to the installer. (`path to` must not include the prefix)'
+    echo $'\ttextfile       <file path>   <file name> [path to]   - Add a text file to the installer. Text files can be used in the pre/postinstall scripts'
+    echo $'\tnoinstall                                            - Dont install the files, just run the scripts'
+    echo $'\tpreinit        <script file>                         - A script executed before the installer initialisation (just bellow the #!)'
+    echo $'\tpreinstall     <script file>                         - A script executed just before the installation'
+    echo $'\tpostinstall    <script file>                         - A script executed just after the installation'
+    echo $'\tdefaultprefix  <prefix>                              - The default prefix to be used'
+    echo $'\texec           <file>                                - A script to be executed during the installer generation'
+    echo $'\tsource         <script file>                         - A script to be sourced during the installer generation'
+    echo $'\teval           <bash>                                - A command to be evaluated during the installer generation'
+    echo $'\tdebug                                                - Drop a bash REPL in the generator context'
     echo
   ) > $STDERR
 }
@@ -266,7 +275,7 @@ if [[ $# > 1 ]]; then
   exit 1
 fi
 
-if [[ $CONFFILE = "help" ]]; then
+if [[ $CONFFILE = "help" ]] || [[ $CONFFILE = "--help" ]] || [[ $CONFFILE = "-h" ]]; then
   help
   exit 0
 fi
