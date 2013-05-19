@@ -11,7 +11,7 @@ file  src/main.c      main
 file  src/toto.c      toto_c
 file  src/toto.h      toto_h
 source source.sh
-debug
+#debug
 file  src/Makefile    makefile
 file  src/a.out       bin       a.out
 
