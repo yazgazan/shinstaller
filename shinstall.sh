@@ -26,7 +26,7 @@ function fail_open_execute()  {
 }
 
 function usage()  {
-  echo "Usage : $0 [conf file] (default "'`embederconf`'")" > $STDERR
+  echo "Usage : $0 [conf file] (default "'`shinstallconf`'")" > $STDERR
 }
 
 function help()  {
@@ -260,8 +260,8 @@ function cmd_skip()  {
 }
 
 if [[ $# < 1 ]]; then
-  if [[ -r "embederconf" ]]; then
-    CONFFILE="embederconf"
+  if [[ -r "shinstallconf" ]]; then
+    CONFFILE="shinstallconf"
   else
     usage
     exit 1

@@ -4,7 +4,7 @@ all:
 	@make -C src > /dev/null
 	@cp -f src/a.out a.out > /dev/null
 	@echo "Generating ..."
-	@../embeder.sh
+	@../shinstall.sh
 	@cp test.out.sh test/
 
 clean:

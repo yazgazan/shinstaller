@@ -1,0 +1,7 @@
+
+output          shinstall-installer.sh
+preinstall      pre-install.sh
+defaultprefix   /usr/local
+
+file shinstall.sh  bin bin/shinstall
+
