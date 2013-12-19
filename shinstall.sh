@@ -342,6 +342,7 @@ done < $CONFFILE
 (
   echo "function _embed_extract_all()  {"
   echo $EXTRACT_ALL
+  echo "return 0"
   echo "}"
   echo "_EMBED_TOTAL_SIZE=$TOTAL_SIZE"
 ) >> $TMPFILE
