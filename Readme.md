@@ -2,5 +2,5 @@
 shinstaller
 ===========
 
-No documentation yet, please se the example directory.
+No documentation yet, please see the example directory.
 
